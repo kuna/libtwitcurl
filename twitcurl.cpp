@@ -3,6 +3,9 @@
 #include "twitcurl.h"
 #include "urlencode.h"
 
+#include <algorithm>
+using namespace std;
+
 /*++
 * @method: twitCurl::twitCurl
 *
@@ -1963,23 +1966,26 @@ bool twitCurl::performPost( const std::string& postUrl, std::string dataStr )
     {
         return false;
     }
-
+	
+    std::string dataStrDummy;
     std::string oAuthHttpHeader;
     struct curl_slist* pOAuthHeaderList = NULL;
 
     /* Prepare standard params */
     prepareStandardParams();
 
-    /* Set OAuth header */
-    m_oAuth.getOAuthHeader( eOAuthHttpPost, postUrl, dataStr, oAuthHttpHeader );
+	// KUNA
+	m_oAuth.setStatusString(dataStr);
+    m_oAuth.getOAuthHeader( eOAuthHttpPost, postUrl, dataStrDummy, oAuthHttpHeader);
     if( oAuthHttpHeader.length() )
     {
-        pOAuthHeaderList = curl_slist_append( pOAuthHeaderList, oAuthHttpHeader.c_str() );
-        if( pOAuthHeaderList )
-        {
-            curl_easy_setopt( m_curlHandle, CURLOPT_HTTPHEADER, pOAuthHeaderList );
-        }
-    }
+		pOAuthHeaderList = curl_slist_append( pOAuthHeaderList, oAuthHttpHeader.c_str() );
+		if( pOAuthHeaderList )
+		{
+			curl_easy_setopt( m_curlHandle, CURLOPT_HTTPHEADER, pOAuthHeaderList );
+		}
+	}
+	m_oAuth.setStatusString("");
 
     /* Set http request, url and data */
     curl_easy_setopt( m_curlHandle, CURLOPT_POST, 1 );

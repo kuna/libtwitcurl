@@ -44,7 +44,7 @@ namespace twitCurlDefaults
     const std::string TWITCURL_EXTENSIONFORMATS[2] = { ".xml",
                                                        ".json"
                                                      };
-    const std::string TWITCURL_PROTOCOLS[2] =        { "http://",
+    const std::string TWITCURL_PROTOCOLS[2] =        { "",
                                                        "https://"
                                                      };
     const std::string TWITCURL_TARGETSCREENNAME = "target_screen_name=";
@@ -68,7 +68,7 @@ namespace twitterDefaults
 {
 
     /* Search URLs */
-    const std::string TWITCURL_SEARCH_URL = "http://search.twitter.com/search";
+    const std::string TWITCURL_SEARCH_URL = "search.twitter.com/search";
 
     /* Status URLs */
     const std::string TWITCURL_STATUSUPDATE_URL = "http://api.twitter.com/1/statuses/update";

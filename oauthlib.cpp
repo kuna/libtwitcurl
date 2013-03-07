@@ -236,6 +236,10 @@ void oAuth::setOAuthPin( const std::string& oAuthPin )
     m_oAuthPin = oAuthPin;
 }
 
+void oAuth::setStatusString(const std::string& str) {
+	statusString = str;
+}
+
 /*++
 * @method: oAuth::generateNonceTimeStamp
 *
@@ -390,6 +394,11 @@ bool oAuth::buildOAuthTokenKeyValuePairs( const bool includeOAuthVerifierPin,
     /* Version */
     keyValueMap[oAuthLibDefaults::OAUTHLIB_VERSION_KEY] = std::string( "1.0" );
 
+	/* status KUNA */
+	if (m_status.length() ) {
+		keyValueMap[oAuthLibDefaults::OAUTHLIB_STATUS] = m_status;
+	}
+
     return ( keyValueMap.size() ) ? true : false;
 }
 
@@ -502,7 +511,7 @@ bool oAuth::getOAuthHeader( const eOAuthHttpRequestType eType,
                             const std::string& rawUrl,
                             const std::string& rawData,
                             std::string& oAuthHttpHeader,
-                            const bool includeOAuthVerifierPin )
+                            const bool includeOAuthVerifierPin)
 {
     oAuthKeyValuePairs rawKeyValuePairs;
     std::string rawParams;
@@ -528,13 +537,21 @@ bool oAuth::getOAuthHeader( const eOAuthHttpRequestType eType,
         buildOAuthRawDataKeyValPairs( dataPart, true, rawKeyValuePairs );
     }
 
+	/* check status */
+	if (statusString.length() > 0) {
+		size_t pos = statusString.find("=");
+		m_status = statusString.substr(pos+1);
+	} else {
+		m_status = "";
+	}
+
     /* Split the raw data if it's present, as key=value pairs. Data should already be urlencoded once */
     buildOAuthRawDataKeyValPairs( rawData, false, rawKeyValuePairs );
 
     /* Build key-value pairs needed for OAuth request token, without signature */
     buildOAuthTokenKeyValuePairs( includeOAuthVerifierPin, std::string( "" ), rawKeyValuePairs, true );
 
-    /* Get url encoded base64 signature using request type, url and parameters */
+    /* Get url encoded base64 signature using request type, url and parameters - TEST */
     getSignature( eType, pureUrl, rawKeyValuePairs, oauthSignature );
 
     /* Clear map so that the parameters themselves are not sent along with the OAuth values */
