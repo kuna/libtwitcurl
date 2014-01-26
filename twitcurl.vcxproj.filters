@@ -2,11 +2,11 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{e152cbd3-87c4-48e3-9a1a-a420b54af815}</UniqueIdentifier>
+      <UniqueIdentifier>{8f055a69-a51c-49ca-ac88-294dabf76459}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{74e2a731-5ca9-4b79-9a54-e54b76ad60af}</UniqueIdentifier>
+      <UniqueIdentifier>{34a865a6-692c-48d7-9855-22da1ee1b290}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl</Extensions>
     </Filter>
   </ItemGroup>
@@ -44,6 +44,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="twitcurl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="twitcurlurls.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="urlencode.h">

@@ -1,3 +1,4 @@
+#include "twitcurlurls.h"
 #include "oauthlib.h"
 #include "HMAC_SHA1.h"
 #include "base64.h"
@@ -236,10 +237,6 @@ void oAuth::setOAuthPin( const std::string& oAuthPin )
     m_oAuthPin = oAuthPin;
 }
 
-void oAuth::setStatusString(const std::string& str) {
-	statusString = str;
-}
-
 /*++
 * @method: oAuth::generateNonceTimeStamp
 *
@@ -289,35 +286,22 @@ void oAuth::buildOAuthRawDataKeyValPairs( const std::string& rawData,
                                           oAuthKeyValuePairs& rawDataKeyValuePairs )
 {
     /* Raw data if it's present. Data should already be urlencoded once */
-    if( rawData.length() )
+    if( rawData.empty() )
     {
-        size_t nSep = std::string::npos;
-        size_t nPos = std::string::npos;
-        std::string dataKeyVal;
-        std::string dataKey;
-        std::string dataVal;
+        return;
+    }
 
-        /* This raw data part can contain many key value pairs: key1=value1&key2=value2&key3=value3 */
-        std::string dataPart = rawData;
-        while( std::string::npos != ( nSep = dataPart.find_first_of("&") ) )
-        {
-            /* Extract first key=value pair */
-            dataKeyVal = dataPart.substr( 0, nSep );
+    size_t nSep = std::string::npos;
+    size_t nPos = std::string::npos;
+    std::string dataKeyVal;
+    std::string dataKey;
+    std::string dataVal;
 
-            /* Split them */
-            nPos = dataKeyVal.find_first_of( "=" );
-            if( std::string::npos != nPos )
-            {
-                dataKey = dataKeyVal.substr( 0, nPos );
-                dataVal = dataKeyVal.substr( nPos + 1 );
-
-                /* Put this key=value pair in map */
-                rawDataKeyValuePairs[dataKey] = urlencodeData ? urlencode( dataVal ) : dataVal;
-            }
-            dataPart = dataPart.substr( nSep + 1 );
-        }
-
-        /* For the last key=value */
+    /* This raw data part can contain many key value pairs: key1=value1&key2=value2&key3=value3 */
+    std::string dataPart = rawData;
+    while( std::string::npos != ( nSep = dataPart.find_first_of("&") ) )
+    {
+        /* Extract first key=value pair */
         dataKeyVal = dataPart.substr( 0, nSep );
 
         /* Split them */
@@ -330,6 +314,21 @@ void oAuth::buildOAuthRawDataKeyValPairs( const std::string& rawData,
             /* Put this key=value pair in map */
             rawDataKeyValuePairs[dataKey] = urlencodeData ? urlencode( dataVal ) : dataVal;
         }
+        dataPart = dataPart.substr( nSep + 1 );
+    }
+
+    /* For the last key=value */
+    dataKeyVal = dataPart.substr( 0, nSep );
+
+    /* Split them */
+    nPos = dataKeyVal.find_first_of( "=" );
+    if( std::string::npos != nPos )
+    {
+        dataKey = dataKeyVal.substr( 0, nPos );
+        dataVal = dataKeyVal.substr( nPos + 1 );
+
+        /* Put this key=value pair in map */
+        rawDataKeyValuePairs[dataKey] = urlencodeData ? urlencode( dataVal ) : dataVal;
     }
 }
 
@@ -394,12 +393,7 @@ bool oAuth::buildOAuthTokenKeyValuePairs( const bool includeOAuthVerifierPin,
     /* Version */
     keyValueMap[oAuthLibDefaults::OAUTHLIB_VERSION_KEY] = std::string( "1.0" );
 
-	/* status KUNA */
-	if (m_status.length() ) {
-		keyValueMap[oAuthLibDefaults::OAUTHLIB_STATUS] = m_status;
-	}
-
-    return ( keyValueMap.size() ) ? true : false;
+    return !keyValueMap.empty();
 }
 
 /*++
@@ -426,7 +420,7 @@ bool oAuth::getSignature( const eOAuthHttpRequestType eType,
     std::string sigBase;
 
     /* Initially empty signature */
-    oAuthSignature.assign( "" );
+    oAuthSignature = "";
 
     /* Build a string using key-value pairs */
     paramsSeperator = "&";
@@ -490,7 +484,7 @@ bool oAuth::getSignature( const eOAuthHttpRequestType eType,
     /* Do an url encode */
     oAuthSignature = urlencode( base64Str );
 
-    return ( oAuthSignature.length() ) ? true : false;
+    return !oAuthSignature.empty();
 }
 
 /*++
@@ -511,7 +505,7 @@ bool oAuth::getOAuthHeader( const eOAuthHttpRequestType eType,
                             const std::string& rawUrl,
                             const std::string& rawData,
                             std::string& oAuthHttpHeader,
-                            const bool includeOAuthVerifierPin)
+                            const bool includeOAuthVerifierPin )
 {
     oAuthKeyValuePairs rawKeyValuePairs;
     std::string rawParams;
@@ -520,7 +514,7 @@ bool oAuth::getOAuthHeader( const eOAuthHttpRequestType eType,
     std::string pureUrl( rawUrl );
 
     /* Clear header string initially */
-    oAuthHttpHeader.assign( "" );
+    oAuthHttpHeader = "";
     rawKeyValuePairs.clear();
 
     /* If URL itself contains ?key=value, then extract and put them in map */
@@ -537,21 +531,13 @@ bool oAuth::getOAuthHeader( const eOAuthHttpRequestType eType,
         buildOAuthRawDataKeyValPairs( dataPart, true, rawKeyValuePairs );
     }
 
-	/* check status */
-	if (statusString.length() > 0) {
-		size_t pos = statusString.find("=");
-		m_status = statusString.substr(pos+1);
-	} else {
-		m_status = "";
-	}
-
     /* Split the raw data if it's present, as key=value pairs. Data should already be urlencoded once */
     buildOAuthRawDataKeyValPairs( rawData, false, rawKeyValuePairs );
 
     /* Build key-value pairs needed for OAuth request token, without signature */
     buildOAuthTokenKeyValuePairs( includeOAuthVerifierPin, std::string( "" ), rawKeyValuePairs, true );
 
-    /* Get url encoded base64 signature using request type, url and parameters - TEST */
+    /* Get url encoded base64 signature using request type, url and parameters */
     getSignature( eType, pureUrl, rawKeyValuePairs, oauthSignature );
 
     /* Clear map so that the parameters themselves are not sent along with the OAuth values */
@@ -568,7 +554,7 @@ bool oAuth::getOAuthHeader( const eOAuthHttpRequestType eType,
     oAuthHttpHeader.assign( oAuthLibDefaults::OAUTHLIB_AUTHHEADER_STRING );
     oAuthHttpHeader.append( rawParams );
 
-    return ( oAuthHttpHeader.length() ) ? true : false;
+    return !oAuthHttpHeader.empty();
 }
 
 /*++
@@ -588,48 +574,50 @@ bool oAuth::getStringFromOAuthKeyValuePairs( const oAuthKeyValuePairs& rawParamM
                                              std::string& rawParams,
                                              const std::string& paramsSeperator )
 {
-    rawParams.assign( "" );
-    if( rawParamMap.size() )
+    rawParams = "";
+    if( rawParamMap.empty() )
     {
-        oAuthKeyValueList keyValueList;
-        std::string dummyStr;
-
-        /* Push key-value pairs to a list of strings */
-        keyValueList.clear();
-        oAuthKeyValuePairs::const_iterator itMap = rawParamMap.begin();
-        for( ; itMap != rawParamMap.end(); itMap++ )
-        {
-            dummyStr.assign( itMap->first );
-            dummyStr.append( "=" );
-            if( paramsSeperator == "," )
-            {
-                dummyStr.append( "\"" );
-            }
-            dummyStr.append( itMap->second );
-            if( paramsSeperator == "," )
-            {
-                dummyStr.append( "\"" );
-            }
-            keyValueList.push_back( dummyStr );
-        }
-
-        /* Sort key-value pairs based on key name */
-        keyValueList.sort();
-
-        /* Now, form a string */
-        dummyStr.assign( "" );
-        oAuthKeyValueList::iterator itKeyValue = keyValueList.begin();
-        for( ; itKeyValue != keyValueList.end(); itKeyValue++ )
-        {
-            if( dummyStr.length() )
-            {
-                dummyStr.append( paramsSeperator );
-            }
-            dummyStr.append( itKeyValue->c_str() );
-        }
-        rawParams.assign( dummyStr );
+        return false;
     }
-    return ( rawParams.length() ) ? true : false;
+
+    oAuthKeyValueList keyValueList;
+    std::string dummyStr;
+
+    /* Push key-value pairs to a list of strings */
+    keyValueList.clear();
+    oAuthKeyValuePairs::const_iterator itMap = rawParamMap.begin();
+    for( ; itMap != rawParamMap.end(); itMap++ )
+    {
+        dummyStr.assign( itMap->first );
+        dummyStr.append( "=" );
+        if( paramsSeperator == "," )
+        {
+            dummyStr.append( "\"" );
+        }
+        dummyStr.append( itMap->second );
+        if( paramsSeperator == "," )
+        {
+            dummyStr.append( "\"" );
+        }
+        keyValueList.push_back( dummyStr );
+    }
+
+    /* Sort key-value pairs based on key name */
+    keyValueList.sort();
+
+    /* Now, form a string */
+    dummyStr = "";
+    oAuthKeyValueList::iterator itKeyValue = keyValueList.begin();
+    for( ; itKeyValue != keyValueList.end(); itKeyValue++ )
+    {
+        if( dummyStr.length() )
+        {
+            dummyStr.append( paramsSeperator );
+         }
+         dummyStr.append( itKeyValue->c_str() );
+    }
+    rawParams = dummyStr;
+    return !rawParams.empty();
 }
 
 /*++
@@ -645,45 +633,49 @@ bool oAuth::getStringFromOAuthKeyValuePairs( const oAuthKeyValuePairs& rawParamM
 *--*/
 bool oAuth::extractOAuthTokenKeySecret( const std::string& requestTokenResponse )
 {
-    if( requestTokenResponse.length() )
+    if( requestTokenResponse.empty() )
     {
-        size_t nPos = std::string::npos;
-        std::string strDummy;
+        return false;
+    }
 
-        /* Get oauth_token key */
-        nPos = requestTokenResponse.find( oAuthLibDefaults::OAUTHLIB_TOKEN_KEY );
+    size_t nPos = std::string::npos;
+    std::string strDummy;
+
+    /* Get oauth_token key */
+    nPos = requestTokenResponse.find( oAuthLibDefaults::OAUTHLIB_TOKEN_KEY );
+    if( std::string::npos != nPos )
+    {
+        nPos = nPos + oAuthLibDefaults::OAUTHLIB_TOKEN_KEY.length() + strlen( "=" );
+        strDummy = requestTokenResponse.substr( nPos );
+        nPos = strDummy.find( "&" );
         if( std::string::npos != nPos )
         {
-            nPos = nPos + oAuthLibDefaults::OAUTHLIB_TOKEN_KEY.length() + strlen( "=" );
-            strDummy = requestTokenResponse.substr( nPos );
-            nPos = strDummy.find( "&" );
-            if( std::string::npos != nPos )
-            {
-                m_oAuthTokenKey = strDummy.substr( 0, nPos );
-            }
-        }
-
-        /* Get oauth_token_secret */
-        nPos = requestTokenResponse.find( oAuthLibDefaults::OAUTHLIB_TOKENSECRET_KEY );
-        if( std::string::npos != nPos )
-        {
-            nPos = nPos + oAuthLibDefaults::OAUTHLIB_TOKENSECRET_KEY.length() + strlen( "=" );
-            strDummy = requestTokenResponse.substr( nPos );
-            nPos = strDummy.find( "&" );
-            if( std::string::npos != nPos )
-            {
-                m_oAuthTokenSecret = strDummy.substr( 0, nPos );
-            }
-        }
-
-        /* Get screen_name */
-        nPos = requestTokenResponse.find( oAuthLibDefaults::OAUTHLIB_SCREENNAME_KEY );
-        if( std::string::npos != nPos )
-        {
-            nPos = nPos + oAuthLibDefaults::OAUTHLIB_SCREENNAME_KEY.length() + strlen( "=" );
-            strDummy = requestTokenResponse.substr( nPos );
-            m_oAuthScreenName = strDummy;
+            m_oAuthTokenKey = strDummy.substr( 0, nPos );
         }
     }
+
+    /* Get oauth_token_secret */
+    nPos = requestTokenResponse.find( oAuthLibDefaults::OAUTHLIB_TOKENSECRET_KEY );
+    if( std::string::npos != nPos )
+    {
+        nPos = nPos + oAuthLibDefaults::OAUTHLIB_TOKENSECRET_KEY.length() + strlen( "=" );
+        strDummy = requestTokenResponse.substr( nPos );
+        nPos = strDummy.find( "&" );
+        if( std::string::npos != nPos )
+        {
+            m_oAuthTokenSecret = strDummy.substr( 0, nPos );
+        }
+    }
+
+    /* Get screen_name */
+    nPos = requestTokenResponse.find( oAuthLibDefaults::OAUTHLIB_SCREENNAME_KEY );
+    if( std::string::npos != nPos )
+    {
+        nPos = nPos + oAuthLibDefaults::OAUTHLIB_SCREENNAME_KEY.length() + strlen( "=" );
+        strDummy = requestTokenResponse.substr( nPos );
+        m_oAuthScreenName = strDummy;
+    }
+
     return true;
 }
+
