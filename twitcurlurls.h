@@ -56,7 +56,7 @@ namespace twitterDefaults
     const std::string TWITCURL_STATUSSHOW_URL = TWITCURL_BASE_URL + "statuses/show/";
     const std::string TWITCURL_STATUDESTROY_URL = TWITCURL_BASE_URL + "statuses/destroy/";
     const std::string TWITCURL_RETWEET_URL = TWITCURL_BASE_URL + "statuses/retweet/";
-	const std::string TWITCURL_MEDIA_URL = TWITCURL_BASE_URL + "statuses/update_with_media.json";
+	const std::string TWITCURL_MEDIA_URL = TWITCURL_BASE_URL + "statuses/update_with_media/";
 
     /* Timeline URLs */
     const std::string TWITCURL_HOME_TIMELINE_URL = TWITCURL_BASE_URL + "statuses/home_timeline";

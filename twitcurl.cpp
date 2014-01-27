@@ -510,7 +510,7 @@ bool twitCurl::uploadPicture( std::string& picturedata, std::string& newStatus )
 	/* **************** */
 	/* part PerformPOST */
 	/* **************** */
-	std::string postUrl = twitCurlDefaults::TWITCURL_PROTOCOLS[1] + twitterDefaults::TWITCURL_MEDIA_URL; // m_eProtocolType
+	std::string postUrl = twitCurlDefaults::TWITCURL_PROTOCOLS[m_eProtocolType] + twitterDefaults::TWITCURL_MEDIA_URL; // m_eProtocolType
 	std::string dataStr = twitCurlDefaults::TWITCURL_STATUSSTRING + newStatusMsg;
 
     /* Return if cURL is not initialized */
@@ -595,7 +595,7 @@ bool twitCurl::uploadPictureRaw( char *data, int size, std::string& newStatus )
 	/* **************** */
 	/* part PerformPOST */
 	/* **************** */
-	std::string postUrl = twitCurlDefaults::TWITCURL_PROTOCOLS[1] + twitterDefaults::TWITCURL_MEDIA_URL;	// m_eProtocolType
+	std::string postUrl = twitCurlDefaults::TWITCURL_PROTOCOLS[m_eProtocolType] + twitterDefaults::TWITCURL_MEDIA_URL;	// m_eProtocolType
 	std::string dataStr = twitCurlDefaults::TWITCURL_STATUSSTRING + newStatusMsg;
 
     /* Return if cURL is not initialized */
