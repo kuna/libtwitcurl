@@ -492,7 +492,6 @@ bool twitCurl::retweetById( std::string& statusId )
 *
 * @input: picturedata - base64 encoded picture data
 *         newStatus - status message text
-*         inReplyToStatusId - optional status id to we're replying to
 *
 * @output: true if POST is success, otherwise false. This does not check http
 *          response by twitter. Use getLastWebResponse() for that.
@@ -511,7 +510,92 @@ bool twitCurl::uploadPicture( std::string& picturedata, std::string& newStatus )
 	/* **************** */
 	/* part PerformPOST */
 	/* **************** */
-	std::string postUrl = twitCurlDefaults::TWITCURL_PROTOCOLS[1] + twitterDefaults::TWITCURL_MEDIA_URL;
+	std::string postUrl = twitCurlDefaults::TWITCURL_PROTOCOLS[1] + twitterDefaults::TWITCURL_MEDIA_URL; // m_eProtocolType
+	std::string dataStr = twitCurlDefaults::TWITCURL_STATUSSTRING + newStatusMsg;
+
+    /* Return if cURL is not initialized */
+    if( !isCurlInit() )
+    {
+        return false;
+    }
+
+    std::string oAuthHttpHeader;
+    struct curl_slist* pOAuthHeaderList = NULL;
+
+    /* Prepare standard params */
+    prepareStandardParams();
+
+
+    /* Set http request, url and data */
+    curl_easy_setopt( m_curlHandle, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt( m_curlHandle, CURLOPT_URL, postUrl.c_str() );
+    curl_easy_setopt( m_curlHandle, CURLOPT_POST, 1 );
+
+    /* Set OAuth header */
+    m_oAuth.getOAuthHeader( eOAuthHttpPost, postUrl, std::string(""), oAuthHttpHeader );
+    if( oAuthHttpHeader.length() )
+    {
+        pOAuthHeaderList = curl_slist_append( pOAuthHeaderList, oAuthHttpHeader.c_str() );
+        if( pOAuthHeaderList )
+        {
+            curl_easy_setopt( m_curlHandle, CURLOPT_HTTPHEADER, pOAuthHeaderList );
+        }
+    }
+	pOAuthHeaderList = curl_slist_append(pOAuthHeaderList, "Expect:");	// for big data transmission
+
+	curl_httppost *formpost=NULL;
+	curl_httppost *lastptr=NULL;
+	
+	curl_formadd( &formpost, &lastptr, CURLFORM_COPYNAME, "status", CURLFORM_COPYCONTENTS, newStatusMsg.c_str(), CURLFORM_END );
+    struct curl_slist *pheaders=NULL;
+    pheaders = curl_slist_append(pheaders, "Content-Transfer-Encoding: base64");
+	curl_formadd( &formpost, &lastptr, CURLFORM_COPYNAME, "media[]", CURLFORM_COPYCONTENTS, picturedata.c_str(),
+		CURLFORM_CONTENTHEADER, pheaders, CURLFORM_END );
+	curl_easy_setopt( m_curlHandle, CURLOPT_HTTPPOST, formpost );
+
+    /* Send http request */
+    if( CURLE_OK == curl_easy_perform( m_curlHandle ) )
+    {
+        if( pOAuthHeaderList )
+        {
+            curl_slist_free_all( pOAuthHeaderList );
+        }
+        return true;
+    }
+    if( pOAuthHeaderList )
+    {
+        curl_slist_free_all( pOAuthHeaderList );
+    }
+    return false;
+}
+
+
+/*++
+* @method: twitCurl::uploadPictureRaw
+*
+* @description: method to upload new picture raw
+*
+* @input: picturedata - "not base64 encoded" pure pic data
+*         newStatus - status message text
+*
+* @output: true if POST is success, otherwise false. This does not check http
+*          response by twitter. Use getLastWebResponse() for that.
+*
+*--*/
+bool twitCurl::uploadPictureRaw( char *data, int size, std::string& newStatus )
+{
+	if( newStatus.empty() || !data )
+    {
+        return false;
+    }
+
+    /* Prepare new status message */
+    std::string newStatusMsg = urlencode( newStatus );
+
+	/* **************** */
+	/* part PerformPOST */
+	/* **************** */
+	std::string postUrl = twitCurlDefaults::TWITCURL_PROTOCOLS[1] + twitterDefaults::TWITCURL_MEDIA_URL;	// m_eProtocolType
 	std::string dataStr = twitCurlDefaults::TWITCURL_STATUSSTRING + newStatusMsg;
 
     /* Return if cURL is not initialized */
@@ -531,8 +615,6 @@ bool twitCurl::uploadPicture( std::string& picturedata, std::string& newStatus )
     curl_easy_setopt( m_curlHandle, CURLOPT_URL, postUrl.c_str() );
     curl_easy_setopt( m_curlHandle, CURLOPT_POST, 1 );
 
-	pOAuthHeaderList = curl_slist_append(pOAuthHeaderList, "Expect:");	// for big data transmission
-	pOAuthHeaderList = curl_slist_append(pOAuthHeaderList, "Content-Type: multipart/form-data");
     /* Set OAuth header */
     m_oAuth.getOAuthHeader( eOAuthHttpPost, postUrl, std::string(""), oAuthHttpHeader );
     if( oAuthHttpHeader.length() )
@@ -543,12 +625,13 @@ bool twitCurl::uploadPicture( std::string& picturedata, std::string& newStatus )
             curl_easy_setopt( m_curlHandle, CURLOPT_HTTPHEADER, pOAuthHeaderList );
         }
     }
+	pOAuthHeaderList = curl_slist_append(pOAuthHeaderList, "Expect:");	// for big data transmission
 
 	curl_httppost *formpost=NULL;
 	curl_httppost *lastptr=NULL;
 	
-	curl_formadd( &formpost, &lastptr, CURLFORM_COPYNAME, "media[]", CURLFORM_COPYCONTENTS, picturedata.c_str(), CURLFORM_END );
 	curl_formadd( &formpost, &lastptr, CURLFORM_COPYNAME, "status", CURLFORM_COPYCONTENTS, newStatusMsg.c_str(), CURLFORM_END );
+	curl_formadd( &formpost, &lastptr, CURLFORM_COPYNAME, "media[]", CURLFORM_COPYCONTENTS, data, CURLFORM_CONTENTSLENGTH, size, CURLFORM_END );
 	curl_easy_setopt( m_curlHandle, CURLOPT_HTTPPOST, formpost );
 
     /* Send http request */
