@@ -497,7 +497,7 @@ bool twitCurl::retweetById( std::string& statusId )
 *          response by twitter. Use getLastWebResponse() for that.
 *
 *--*/
-bool twitCurl::uploadPicture( std::string& picturedata, std::string& newStatus )
+bool twitCurl::uploadPictureBase64( std::string& picturedata, std::string& newStatus )
 {
 	if( newStatus.empty() || picturedata.empty() )
     {
@@ -505,13 +505,13 @@ bool twitCurl::uploadPicture( std::string& picturedata, std::string& newStatus )
     }
 
     /* Prepare new status message */
-    std::string newStatusMsg = urlencode( newStatus );
+    //std::string newStatusMsg = urlencode( newStatus );
 
 	/* **************** */
 	/* part PerformPOST */
 	/* **************** */
 	std::string postUrl = twitCurlDefaults::TWITCURL_PROTOCOLS[m_eProtocolType] + twitterDefaults::TWITCURL_MEDIA_URL; // m_eProtocolType
-	std::string dataStr = twitCurlDefaults::TWITCURL_STATUSSTRING + newStatusMsg;
+	//std::string dataStr = twitCurlDefaults::TWITCURL_STATUSSTRING + newStatusMsg;
 
     /* Return if cURL is not initialized */
     if( !isCurlInit() )
@@ -527,7 +527,6 @@ bool twitCurl::uploadPicture( std::string& picturedata, std::string& newStatus )
 
 
     /* Set http request, url and data */
-    curl_easy_setopt( m_curlHandle, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt( m_curlHandle, CURLOPT_URL, postUrl.c_str() );
     curl_easy_setopt( m_curlHandle, CURLOPT_POST, 1 );
 
@@ -546,7 +545,7 @@ bool twitCurl::uploadPicture( std::string& picturedata, std::string& newStatus )
 	curl_httppost *formpost=NULL;
 	curl_httppost *lastptr=NULL;
 	
-	curl_formadd( &formpost, &lastptr, CURLFORM_COPYNAME, "status", CURLFORM_COPYCONTENTS, newStatusMsg.c_str(), CURLFORM_END );
+	curl_formadd( &formpost, &lastptr, CURLFORM_COPYNAME, "status", CURLFORM_COPYCONTENTS, newStatus.c_str(), CURLFORM_END );
     struct curl_slist *pheaders=NULL;
     pheaders = curl_slist_append(pheaders, "Content-Transfer-Encoding: base64");
 	curl_formadd( &formpost, &lastptr, CURLFORM_COPYNAME, "media[]", CURLFORM_COPYCONTENTS, picturedata.c_str(),
@@ -590,13 +589,13 @@ bool twitCurl::uploadPictureRaw( char *data, int size, std::string& newStatus )
     }
 
     /* Prepare new status message */
-    std::string newStatusMsg = urlencode( newStatus );
+    //std::string newStatusMsg = urlencode( newStatus );
 
 	/* **************** */
 	/* part PerformPOST */
 	/* **************** */
 	std::string postUrl = twitCurlDefaults::TWITCURL_PROTOCOLS[m_eProtocolType] + twitterDefaults::TWITCURL_MEDIA_URL;	// m_eProtocolType
-	std::string dataStr = twitCurlDefaults::TWITCURL_STATUSSTRING + newStatusMsg;
+	//std::string dataStr = twitCurlDefaults::TWITCURL_STATUSSTRING + newStatusMsg;
 
     /* Return if cURL is not initialized */
     if( !isCurlInit() )
@@ -630,7 +629,7 @@ bool twitCurl::uploadPictureRaw( char *data, int size, std::string& newStatus )
 	curl_httppost *formpost=NULL;
 	curl_httppost *lastptr=NULL;
 	
-	curl_formadd( &formpost, &lastptr, CURLFORM_COPYNAME, "status", CURLFORM_COPYCONTENTS, newStatusMsg.c_str(), CURLFORM_END );
+	curl_formadd( &formpost, &lastptr, CURLFORM_COPYNAME, "status", CURLFORM_COPYCONTENTS, newStatus.c_str(), CURLFORM_END );
 	curl_formadd( &formpost, &lastptr, CURLFORM_COPYNAME, "media[]", CURLFORM_COPYCONTENTS, data, CURLFORM_CONTENTSLENGTH, size, CURLFORM_END );
 	curl_easy_setopt( m_curlHandle, CURLOPT_HTTPPOST, formpost );
 
